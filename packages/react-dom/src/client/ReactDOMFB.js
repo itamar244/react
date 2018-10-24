@@ -11,7 +11,7 @@ import * as ReactFiberTreeReflection from 'react-reconciler/reflection';
 import * as ReactInstanceMap from 'shared/ReactInstanceMap';
 import {addUserTimingListener} from 'shared/ReactFeatureFlags';
 
-import ReactDOM from './ReactDOM';
+import * as ReactDOM from './ReactDOM';
 import * as ReactBrowserEventEmitter from '../events/ReactBrowserEventEmitter';
 import * as ReactDOMComponentTree from './ReactDOMComponentTree';
 
