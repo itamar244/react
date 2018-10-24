@@ -14,7 +14,7 @@ import type {
   ReactContext,
 } from 'shared/ReactTypes';
 
-import React from 'react';
+import * as React from 'react';
 import invariant from 'shared/invariant';
 import getComponentName from 'shared/getComponentName';
 import lowPriorityWarning from 'shared/lowPriorityWarning';

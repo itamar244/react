@@ -7,7 +7,7 @@
  * @flow
  */
 
-import React from 'react';
+import * as React from 'react';
 import warningWithoutStack from 'shared/warningWithoutStack';
 
 function noop() {}

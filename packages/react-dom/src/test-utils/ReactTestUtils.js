@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React from 'react';
+import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {findCurrentFiberUsingSlowPath} from 'react-reconciler/reflection';
 import * as ReactInstanceMap from 'shared/ReactInstanceMap';
@@ -254,10 +254,7 @@ export function scryRenderedDOMComponentsWithClass(root, classNames) {
  */
 export function findRenderedDOMComponentWithClass(root, className) {
   validateClassInstance(root, 'findRenderedDOMComponentWithClass');
-  const all = scryRenderedDOMComponentsWithClass(
-    root,
-    className,
-  );
+  const all = scryRenderedDOMComponentsWithClass(root, className);
   if (all.length !== 1) {
     throw new Error(
       'Did not find exactly one match (found: ' +
@@ -325,10 +322,7 @@ export function scryRenderedComponentsWithType(root, componentType) {
  */
 export function findRenderedComponentWithType(root, componentType) {
   validateClassInstance(root, 'findRenderedComponentWithType');
-  const all = scryRenderedComponentsWithType(
-    root,
-    componentType,
-  );
+  const all = scryRenderedComponentsWithType(root, componentType);
   if (all.length !== 1) {
     throw new Error(
       'Did not find exactly one match (found: ' +

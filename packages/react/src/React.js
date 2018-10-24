@@ -5,67 +5,44 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import ReactVersion from 'shared/ReactVersion';
+import * as Children from './ReactChildren';
 import {
-  REACT_CONCURRENT_MODE_TYPE,
-  REACT_FRAGMENT_TYPE,
-  REACT_PROFILER_TYPE,
-  REACT_STRICT_MODE_TYPE,
-  REACT_SUSPENSE_TYPE,
-} from 'shared/ReactSymbols';
-
-import {Component, PureComponent} from './ReactBaseClasses';
-import {createRef} from './ReactCreateRef';
-import {forEach, map, count, toArray, only} from './ReactChildren';
-import {
-  createElement,
-  createFactory,
-  cloneElement,
+  createElement as createElementNormal,
+  createFactory as createFactoryNormal,
+  cloneElement as cloneElementNormal,
   isValidElement,
 } from './ReactElement';
-import {createContext} from './ReactContext';
-import {lazy} from './ReactLazy';
-import forwardRef from './forwardRef';
-import memo from './memo';
 import {
   createElementWithValidation,
   createFactoryWithValidation,
   cloneElementWithValidation,
 } from './ReactElementValidator';
-import ReactSharedInternals from './ReactSharedInternals';
 
-const React = {
-  Children: {
-    map,
-    forEach,
-    count,
-    toArray,
-    only,
-  },
+export {default as version} from 'shared/ReactVersion';
+export {
+  REACT_CONCURRENT_MODE_TYPE as unstable_ConcurrentMode,
+  REACT_FRAGMENT_TYPE as Fragment,
+  REACT_PROFILER_TYPE as unstable_Profiler,
+  REACT_STRICT_MODE_TYPE as StrictMode,
+  REACT_SUSPENSE_TYPE as Suspense,
+} from 'shared/ReactSymbols';
 
-  createRef,
-  Component,
-  PureComponent,
+export {Component, PureComponent} from './ReactBaseClasses';
+export {createRef} from './ReactCreateRef';
+export {createContext} from './ReactContext';
+export {lazy} from './ReactLazy';
+export {default as forwardRef} from './forwardRef';
+export {default as memo} from './memo';
+export {default as __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED} from './ReactSharedInternals';
 
-  createContext,
-  forwardRef,
-  lazy,
-  memo,
+export {Children, isValidElement};
 
-  Fragment: REACT_FRAGMENT_TYPE,
-  StrictMode: REACT_STRICT_MODE_TYPE,
-  unstable_ConcurrentMode: REACT_CONCURRENT_MODE_TYPE,
-  Suspense: REACT_SUSPENSE_TYPE,
-  unstable_Profiler: REACT_PROFILER_TYPE,
-
-  createElement: __DEV__ ? createElementWithValidation : createElement,
-  cloneElement: __DEV__ ? cloneElementWithValidation : cloneElement,
-  createFactory: __DEV__ ? createFactoryWithValidation : createFactory,
-  isValidElement: isValidElement,
-
-  version: ReactVersion,
-
-  __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: ReactSharedInternals,
-};
-
-export default React;
+export const createElement = __DEV__
+  ? createElementWithValidation
+  : createElementNormal;
+export const cloneElement = __DEV__
+  ? cloneElementWithValidation
+  : cloneElementNormal;
+export const createFactory = __DEV__
+  ? createFactoryWithValidation
+  : createFactoryNormal;
