@@ -333,9 +333,9 @@ ReactWork.prototype._onCommit = function(): void {
 function ReactRoot(
   container: Container,
   isConcurrent: boolean,
-  hydrate: boolean,
+  toHydrate: boolean,
 ) {
-  const root = DOMRenderer.createContainer(container, isConcurrent, hydrate);
+  const root = DOMRenderer.createContainer(container, isConcurrent, toHydrate);
   this._internalRoot = root;
 }
 ReactRoot.prototype.render = function(
@@ -572,7 +572,7 @@ function legacyRenderSubtreeIntoContainer(
   return DOMRenderer.getPublicRootInstance(root._internalRoot);
 }
 
-function createPortal(
+export function createPortal(
   children: ReactNodeList,
   container: DOMContainer,
   key: ?string = null,
@@ -585,192 +585,191 @@ function createPortal(
   return ReactPortal.createPortal(children, container, null, key);
 }
 
-const ReactDOM: Object = {
-  createPortal,
+export function findDOMNode(
+  componentOrElement: Element | ?React$Component<any, any>,
+): null | Element | Text {
+  if (__DEV__) {
+    let owner = (ReactCurrentOwner.current: any);
+    if (owner !== null && owner.stateNode !== null) {
+      const warnedAboutRefsInRender = owner.stateNode._warnedAboutRefsInRender;
+      warningWithoutStack(
+        warnedAboutRefsInRender,
+        '%s is accessing findDOMNode inside its render(). ' +
+          'render() should be a pure function of props and state. It should ' +
+          'never access something that requires stale data from the previous ' +
+          'render, such as refs. Move this logic to componentDidMount and ' +
+          'componentDidUpdate instead.',
+        getComponentName(owner.type) || 'A component',
+      );
+      owner.stateNode._warnedAboutRefsInRender = true;
+    }
+  }
+  if (componentOrElement == null) {
+    return null;
+  }
+  if ((componentOrElement: any).nodeType === ELEMENT_NODE) {
+    return (componentOrElement: any);
+  }
+  if (__DEV__) {
+    return DOMRenderer.findHostInstanceWithWarning(
+      componentOrElement,
+      'findDOMNode',
+    );
+  }
+  return DOMRenderer.findHostInstance(componentOrElement);
+}
 
-  findDOMNode(
-    componentOrElement: Element | ?React$Component<any, any>,
-  ): null | Element | Text {
+export function hydrate(
+  element: React$Node,
+  container: DOMContainer,
+  callback: ?Function,
+) {
+  // TODO: throw or warn if we couldn't hydrate?
+  return legacyRenderSubtreeIntoContainer(
+    null,
+    element,
+    container,
+    true,
+    callback,
+  );
+}
+
+export function render(
+  element: React$Element<any>,
+  container: DOMContainer,
+  callback: ?Function,
+) {
+  return legacyRenderSubtreeIntoContainer(
+    null,
+    element,
+    container,
+    false,
+    callback,
+  );
+}
+
+export function unstable_renderSubtreeIntoContainer(
+  parentComponent: React$Component<any, any>,
+  element: React$Element<any>,
+  containerNode: DOMContainer,
+  callback: ?Function,
+) {
+  invariant(
+    parentComponent != null && ReactInstanceMap.has(parentComponent),
+    'parentComponent must be a valid React Component',
+  );
+  return legacyRenderSubtreeIntoContainer(
+    parentComponent,
+    element,
+    containerNode,
+    false,
+    callback,
+  );
+}
+
+export function unmountComponentAtNode(container: DOMContainer) {
+  invariant(
+    isValidContainer(container),
+    'unmountComponentAtNode(...): Target container is not a DOM element.',
+  );
+
+  if (container._reactRootContainer) {
     if (__DEV__) {
-      let owner = (ReactCurrentOwner.current: any);
-      if (owner !== null && owner.stateNode !== null) {
-        const warnedAboutRefsInRender =
-          owner.stateNode._warnedAboutRefsInRender;
-        warningWithoutStack(
-          warnedAboutRefsInRender,
-          '%s is accessing findDOMNode inside its render(). ' +
-            'render() should be a pure function of props and state. It should ' +
-            'never access something that requires stale data from the previous ' +
-            'render, such as refs. Move this logic to componentDidMount and ' +
-            'componentDidUpdate instead.',
-          getComponentName(owner.type) || 'A component',
-        );
-        owner.stateNode._warnedAboutRefsInRender = true;
-      }
-    }
-    if (componentOrElement == null) {
-      return null;
-    }
-    if ((componentOrElement: any).nodeType === ELEMENT_NODE) {
-      return (componentOrElement: any);
-    }
-    if (__DEV__) {
-      return DOMRenderer.findHostInstanceWithWarning(
-        componentOrElement,
-        'findDOMNode',
+      const rootEl = getReactRootElementInContainer(container);
+      const renderedByDifferentReact =
+        rootEl && !ReactDOMComponentTree.getInstanceFromNode(rootEl);
+      warningWithoutStack(
+        !renderedByDifferentReact,
+        "unmountComponentAtNode(): The node you're attempting to unmount " +
+          'was rendered by another copy of React.',
       );
     }
-    return DOMRenderer.findHostInstance(componentOrElement);
-  },
 
-  hydrate(element: React$Node, container: DOMContainer, callback: ?Function) {
-    // TODO: throw or warn if we couldn't hydrate?
-    return legacyRenderSubtreeIntoContainer(
-      null,
-      element,
-      container,
-      true,
-      callback,
-    );
-  },
-
-  render(
-    element: React$Element<any>,
-    container: DOMContainer,
-    callback: ?Function,
-  ) {
-    return legacyRenderSubtreeIntoContainer(
-      null,
-      element,
-      container,
-      false,
-      callback,
-    );
-  },
-
-  unstable_renderSubtreeIntoContainer(
-    parentComponent: React$Component<any, any>,
-    element: React$Element<any>,
-    containerNode: DOMContainer,
-    callback: ?Function,
-  ) {
-    invariant(
-      parentComponent != null && ReactInstanceMap.has(parentComponent),
-      'parentComponent must be a valid React Component',
-    );
-    return legacyRenderSubtreeIntoContainer(
-      parentComponent,
-      element,
-      containerNode,
-      false,
-      callback,
-    );
-  },
-
-  unmountComponentAtNode(container: DOMContainer) {
-    invariant(
-      isValidContainer(container),
-      'unmountComponentAtNode(...): Target container is not a DOM element.',
-    );
-
-    if (container._reactRootContainer) {
-      if (__DEV__) {
-        const rootEl = getReactRootElementInContainer(container);
-        const renderedByDifferentReact =
-          rootEl && !ReactDOMComponentTree.getInstanceFromNode(rootEl);
-        warningWithoutStack(
-          !renderedByDifferentReact,
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
-            'was rendered by another copy of React.',
-        );
-      }
-
-      // Unmount should not be batched.
-      DOMRenderer.unbatchedUpdates(() => {
-        legacyRenderSubtreeIntoContainer(null, null, container, false, () => {
-          container._reactRootContainer = null;
-        });
+    // Unmount should not be batched.
+    DOMRenderer.unbatchedUpdates(() => {
+      legacyRenderSubtreeIntoContainer(null, null, container, false, () => {
+        container._reactRootContainer = null;
       });
-      // If you call unmountComponentAtNode twice in quick succession, you'll
-      // get `true` twice. That's probably fine?
-      return true;
-    } else {
-      if (__DEV__) {
-        const rootEl = getReactRootElementInContainer(container);
-        const hasNonRootReactChild = !!(
-          rootEl && ReactDOMComponentTree.getInstanceFromNode(rootEl)
-        );
+    });
+    // If you call unmountComponentAtNode twice in quick succession, you'll
+    // get `true` twice. That's probably fine?
+    return true;
+  } else {
+    if (__DEV__) {
+      const rootEl = getReactRootElementInContainer(container);
+      const hasNonRootReactChild = !!(
+        rootEl && ReactDOMComponentTree.getInstanceFromNode(rootEl)
+      );
 
-        // Check if the container itself is a React root node.
-        const isContainerReactRoot =
-          container.nodeType === ELEMENT_NODE &&
-          isValidContainer(container.parentNode) &&
-          !!container.parentNode._reactRootContainer;
+      // Check if the container itself is a React root node.
+      const isContainerReactRoot =
+        container.nodeType === ELEMENT_NODE &&
+        isValidContainer(container.parentNode) &&
+        !!container.parentNode._reactRootContainer;
 
-        warningWithoutStack(
-          !hasNonRootReactChild,
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
-            'was rendered by React and is not a top-level container. %s',
-          isContainerReactRoot
-            ? 'You may have accidentally passed in a React root node instead ' +
-              'of its container.'
-            : 'Instead, have the parent component update its state and ' +
-              'rerender in order to remove this component.',
-        );
-      }
-
-      return false;
-    }
-  },
-
-  // Temporary alias since we already shipped React 16 RC with it.
-  // TODO: remove in React 17.
-  unstable_createPortal(...args) {
-    if (!didWarnAboutUnstableCreatePortal) {
-      didWarnAboutUnstableCreatePortal = true;
-      lowPriorityWarning(
-        false,
-        'The ReactDOM.unstable_createPortal() alias has been deprecated, ' +
-          'and will be removed in React 17+. Update your code to use ' +
-          'ReactDOM.createPortal() instead. It has the exact same API, ' +
-          'but without the "unstable_" prefix.',
+      warningWithoutStack(
+        !hasNonRootReactChild,
+        "unmountComponentAtNode(): The node you're attempting to unmount " +
+          'was rendered by React and is not a top-level container. %s',
+        isContainerReactRoot
+          ? 'You may have accidentally passed in a React root node instead ' +
+            'of its container.'
+          : 'Instead, have the parent component update its state and ' +
+            'rerender in order to remove this component.',
       );
     }
-    return createPortal(...args);
-  },
 
-  unstable_batchedUpdates: DOMRenderer.batchedUpdates,
+    return false;
+  }
+}
 
-  unstable_interactiveUpdates: DOMRenderer.interactiveUpdates,
+// Temporary alias since we already shipped React 16 RC with it.
+// TODO: remove in React 17.
+export function unstable_createPortal(...args) {
+  if (!didWarnAboutUnstableCreatePortal) {
+    didWarnAboutUnstableCreatePortal = true;
+    lowPriorityWarning(
+      false,
+      'The ReactDOM.unstable_createPortal() alias has been deprecated, ' +
+        'and will be removed in React 17+. Update your code to use ' +
+        'ReactDOM.createPortal() instead. It has the exact same API, ' +
+        'but without the "unstable_" prefix.',
+    );
+  }
+  return createPortal(...args);
+}
 
-  flushSync: DOMRenderer.flushSync,
+export const unstable_batchedUpdates = DOMRenderer.batchedUpdates;
 
-  unstable_flushControlled: DOMRenderer.flushControlled,
+export const unstable_interactiveUpdates = DOMRenderer.interactiveUpdates;
 
-  __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
-    // Keep in sync with ReactDOMUnstableNativeDependencies.js
-    // and ReactTestUtils.js. This is an array for better minification.
-    Events: [
-      ReactDOMComponentTree.getInstanceFromNode,
-      ReactDOMComponentTree.getNodeFromInstance,
-      ReactDOMComponentTree.getFiberCurrentPropsFromNode,
-      EventPluginHub.injection.injectEventPluginsByName,
-      EventPluginRegistry.eventNameDispatchConfigs,
-      EventPropagators.accumulateTwoPhaseDispatches,
-      EventPropagators.accumulateDirectDispatches,
-      ReactControlledComponent.enqueueStateRestore,
-      ReactControlledComponent.restoreStateIfNeeded,
-      ReactDOMEventListener.dispatchEvent,
-      EventPluginHub.runEventsInBatch,
-    ],
-  },
+export const flushSync = DOMRenderer.flushSync;
+
+export const unstable_flushControlled = DOMRenderer.flushControlled;
+
+export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = {
+  // Keep in sync with ReactDOMUnstableNativeDependencies.js
+  // and ReactTestUtils.js. This is an array for better minification.
+  Events: [
+    ReactDOMComponentTree.getInstanceFromNode,
+    ReactDOMComponentTree.getNodeFromInstance,
+    ReactDOMComponentTree.getFiberCurrentPropsFromNode,
+    EventPluginHub.injection.injectEventPluginsByName,
+    EventPluginRegistry.eventNameDispatchConfigs,
+    EventPropagators.accumulateTwoPhaseDispatches,
+    EventPropagators.accumulateDirectDispatches,
+    ReactControlledComponent.enqueueStateRestore,
+    ReactControlledComponent.restoreStateIfNeeded,
+    ReactDOMEventListener.dispatchEvent,
+    EventPluginHub.runEventsInBatch,
+  ],
 };
 
 type RootOptions = {
   hydrate?: boolean,
 };
 
-ReactDOM.unstable_createRoot = function createRoot(
+export function unstable_createRoot(
   container: DOMContainer,
   options?: RootOptions,
 ): ReactRoot {
@@ -778,9 +777,9 @@ ReactDOM.unstable_createRoot = function createRoot(
     isValidContainer(container),
     'unstable_createRoot(...): Target container is not a DOM element.',
   );
-  const hydrate = options != null && options.hydrate === true;
-  return new ReactRoot(container, true, hydrate);
-};
+  const toHydrate = options != null && options.hydrate === true;
+  return new ReactRoot(container, true, toHydrate);
+}
 
 const foundDevTools = DOMRenderer.injectIntoDevTools({
   findFiberByHostInstance: ReactDOMComponentTree.getClosestInstanceFromNode,
@@ -814,5 +813,3 @@ if (__DEV__) {
     }
   }
 }
-
-export default ReactDOM;

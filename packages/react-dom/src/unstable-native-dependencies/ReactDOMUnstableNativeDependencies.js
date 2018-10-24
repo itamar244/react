@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import ReactDOM from 'react-dom';
+import * as ReactDOM from 'react-dom';
 import * as EventPluginUtils from 'events/EventPluginUtils';
 import ResponderEventPlugin from 'events/ResponderEventPlugin';
 import ResponderTouchHistoryStore from 'events/ResponderTouchHistoryStore';
